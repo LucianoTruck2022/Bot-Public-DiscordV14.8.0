@@ -1,0 +1,18 @@
+{
+    "owners": {
+        "nicaId": "",
+        "ids": []
+    },
+    "bot": {
+        "token": "MTA2MjIyMDAzNjE3MDg0NjI4OQ.GjNrTH.gUHVPq90mVEVJANKQa2sYaKmvZOvUYSxfgBd40",
+        "invitacion": "",
+        "clientId": "",
+        "clientSecret": ""
+    },
+    "servidor": {
+        "id": ""
+    },
+    "mongodb": {
+        "uri": "mongodb+srv://LucianoTruck22:r5dkOTSSoZoVab7a@transportescam.hpdwga4.mongodb.net/transportescam" 
+    }
+}
