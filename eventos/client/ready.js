@@ -21,7 +21,6 @@ module.exports = {
         }).catch((error) => { })
         //////////////////////////////////////////////////////////////////////////////
         if(!mongodb) return
-        mongoose.set("strictQuery", false)
         mongoose.connect(mongodb.uri, {
 
             useNewUrlParser: true,
