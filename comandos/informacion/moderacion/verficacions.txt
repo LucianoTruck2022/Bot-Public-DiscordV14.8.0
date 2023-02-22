@@ -1,0 +1,269 @@
+const { ChatInputCommandInteraction, Client, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, AttachmentBuilder} = require('discord.js');
+const ms = require('ms');
+const verficardb = require('../../../schemas/verficacion');
+
+module.exports = {
+    name: "verficar",
+    description: "Sistema de Verficacion",
+    UserPerms: ["Administrator"],
+    BotsPerms: ["Administrator"],
+    Category: "moderación",
+    options: [
+      {
+        name: "activar",
+        description: "activar el sistema de verficación",
+        type: 1,
+        options: [
+          {
+            name: "canal",
+            description: "proporciona un canal",
+            type: 7,
+            require: true,
+          },
+          {
+            name: "rol",
+            description: "proporciona un rol",
+            type: 8,
+            require: true,
+          },
+          {
+            name: "cabecera",
+            description: "proporciona una imangen cabecera para el mensjae",
+            type: 3,
+            require: false,
+          },
+          {
+            name: "titulo",
+            description: "proporciona un titulo para el embed",
+            type: 3,
+            require: false,
+          },
+          {
+            name: "descripcion",
+            description: "proporciona un descripcion para el embed",
+            type: 3,
+            require: false,
+          },
+          {
+            name: "imagen",
+            description: "proporciona una imagen para el embed",
+            type: 3,
+            require: false,
+          },
+        ],
+      },
+      {
+        name: "agregar",
+        description: "agrega otros roles al sistema de verficación",
+        type: 1,
+        options: [
+          {
+            name: "rol",
+            description: "proporciona un rol para verficación",
+            type: 8,
+            require: true,
+          },
+        ],
+      },
+      {
+        name: "desactivar",
+        description: "desactivar el sistema de verficación",
+        type: 1,
+      },
+    ],
+  
+    /**
+     *
+     * @param {ChatInputCommandInteraction} interaction
+     * @param {Client} client
+     */
+    async execute(interaction, client) {
+        const {user, guild, options} = interaction
+
+        await interaction.deferReply({ephemeral: true})
+
+        await verficardb.findOne({serverId: guild.id }).then(async (datos) => {
+            const opciones = options.getSubcommand()
+            switch(opciones) {
+                case "activar":
+                    {
+                      const rol = options.getRole("rol");
+                      const canal = options.getChannel("canal");
+                      const cabercera = options.getString("cabercera");
+                      const titulo = options.getString("titulo") || `✅ | verificate`;
+                      const descripcion = options.getString("descripcion") || `Click en el botón para verficarte`;
+                      const imagen = options.getString("imagen");
+                      let mensajeid;
+
+                      if (guild.members.me.roles.position <= rol.position) {
+                        return interaction.editReply({
+                          embeds: [
+                            new EmbedBuilder()
+                              .setColor(client.color)
+                              .setDescription(`⚠ | Los siento ${user} el rol que intentas gestionar es igual o más alto que el mio!`),
+                          ],
+                        });
+                      }
+
+                      if(rol.name.includes('everyone')) {
+                        return interaction.editReply({
+                          embeds: [
+                            new EmbedBuilder()
+                              .setColor(client.color)
+                              .setDescription(`⚠ | Los siento ${user} no puedes agregar el rol everyone`),
+                          ],
+                        });
+                      }
+
+                      if(!datos) {
+                        const archivo = new AttachmentBuilder(cabercera, {name: 'verificacion'})
+                        const embed = new EmbedBuilder()
+                        .setColor(client.color)
+                        .setTitle(`${titulo}`)
+                        .setDescription(`${descripcion}`.split('+n+').join('\n'))
+                        .setFooter({text: `${guild.name}`,iconURL: `${guild.iconURL()}`})
+                        .setTimestamp()
+                        if(imagen && imagen.includes('http')) embed.setImage(`${imagen}`)
+
+                        const row = new ActionRowBuilder().addComponents(
+                          new ButtonBuilder()
+                          .setCustomId('sVerificar')
+                          .setLabel('Verificar')
+                          .setStyle(ButtonStyle.Primary)
+                        )
+
+                        if(cabercera) {
+                          canal.send({files: [archivo], embeds: [embed], components: [row]}).then((msg) => {
+                            mensajeid = msg.id
+                          }).catch((error) => { })
+
+                          datos = new verficardb({
+                            serverName: guild.name,
+                            serverId: guild.id,
+                            roles: [rol.id],
+                            mensajeId: mensajeid,
+                            canalName: canal.name,
+                            canalId: canal.id
+                          })
+
+                          await datos.save()
+
+                          return interaction.editReply({
+                            embeds: [
+                              new EmbedBuilder()
+                                .setColor(client.color)
+                                .setDescription(`✅ | Configurado con éxito el sistema de verificación!`)
+                            ]
+                          })
+                        }
+
+                      } else {
+                        interaction.editReply({
+                          embeds: [
+                            new EmbedBuilder()
+                              .setColor(client.color)
+                              .setDescription(`⚠ | Lo siento ${member} el sistema ya esta activado!`)
+                          ]
+                        })
+                      }
+
+                    } break;
+                    case "agregar":{
+                        if(!datos) {
+
+                          return interaction.editReply({
+                            embeds: [
+                              new EmbedBuilder()
+                                .setColor(client.color)
+                                .setDescription(`⚠ | Lo siento ${member} no tengo datos en mi base de datos!`)
+                            ]
+                          })
+                        } else if (datos) {
+                          const rol = options.getRole('rol')
+                          if (guild.members.me.roles.position <= rol.position) {
+                            return interaction.editReply({
+                              embeds: [
+                                new EmbedBuilder()
+                                  .setColor(client.color)
+                                  .setDescription(`⚠ | Los siento ${user} el rol que intentas gestionar es igual o más alto que el mio!`),
+                              ],
+                            });
+                          }
+
+                          if(rol.name.includes('everyone')) {
+                            return interaction.editReply({
+                              embeds: [
+                                new EmbedBuilder()
+                                  .setColor(client.color)
+                                  .setDescription(`⚠ | Los siento ${user} no puedes agregar el rol everyone`),
+                              ],
+                            });
+                          }
+
+                          datos.roles.push(rol.id)
+                          await datos.save()
+
+                          return interaction.editReply({
+                            embeds: [
+                              new EmbedBuilder()
+                                .setColor(client.color)
+                                .setDescription(`✅ | Agregado con éxito el rol ${rol} al sistema de verificación`)
+                            ]
+                          })
+                        }
+  
+                      }
+                      break;
+                    case "desactivar":{
+                      if(!datos) {
+
+                        return interaction.editReply({
+                          embeds: [
+                            new EmbedBuilder()
+                              .setColor(client.color)
+                              .setDescription(`⚠ | Lo siento ${member} no tengo datos en mi base de datos!`)
+                          ]
+                        })
+                      } else {
+                        const canal = guild.channels.cache.get(datos.canalId)
+                        const mensaje = canal.mensaje.fetch(datos.mensajeId)
+
+                        if(mensaje) {
+                          mensaje.delete()
+                          await datos.deleteOne()
+
+                          return interaction.editReply({
+                            embeds: [
+                              new EmbedBuilder()
+                                .setColor(client.color)
+                                .setDescription(`✅ | Desactivado con éxito el sistema de verificación en el servidor`)
+                            ]
+                          })
+                        } else {
+                           await datos.deleteOne().then(() => {
+
+                            return interaction.editReply({
+                              embeds: [
+                                new EmbedBuilder()
+                                  .setColor(client.color)
+                                  .setDescription(`✅ | Desactivado con éxito el sistema de verificación en el servidor`)
+                              ]
+                            })
+                           })
+                        }
+                      }
+                    } break;
+            }
+        }).catch((error) => {
+            if(error) {
+                return interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                        .setColor(client.color)
+                        .setDescription(`⚠ | Los siento ${user} ocurrió un error al ejecutar el comando!`)
+                    ]
+                })
+            }
+        })
+    }
+}
