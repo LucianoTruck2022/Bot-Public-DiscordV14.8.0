@@ -6,9 +6,9 @@ Ya queda publico este proyecto.
 ### Instalar
 
 ------------
-Para iniciar tienen que renombrar los archivos y agregar sus propios datos:
+Para iniciar tienes agregar sus propios datos:
 
-- **.env.example --> .env**
+- **config.json**
 - **config.example.json --> config.json**
 
 Luego instalan los paquetes con el siguiente comando:
