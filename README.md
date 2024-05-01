@@ -16,5 +16,8 @@ Luego instalan los paquetes con el siguiente comando:
 
 - **npm i**
 
+Para inciar el Bot:
+- **node .**
+
 #### Cualquier otra duda pueden unirse a nuestro servidor:
 [Discord](https://discord.gg/kXZX89erVc)
