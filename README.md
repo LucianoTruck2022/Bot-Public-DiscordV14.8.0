@@ -2,6 +2,7 @@
 
 Unos de los primeros bots que hice, de mi hermano.
 Ya queda publico este proyecto.
+- Versión Discord JS es 14.8.0
 
 ### Instalar
 
